@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 class ViewController: UITableViewController {
 
@@ -16,9 +17,21 @@ class ViewController: UITableViewController {
         view.backgroundColor = .blue
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
+        
+        if Auth.auth().currentUser?.uid == nil {
+            perform(#selector(handleLogout), with: self, afterDelay: 0)
+        }
     }
     
     @objc func handleLogout() {
+        
+        do {
+            try Auth.auth().signOut()
+            Utilities.shared.currentUser = nil
+        } catch let error {
+            debugPrint(error.localizedDescription)
+        }
+        
         let loginController = LoginController()
         loginController.modalPresentationStyle = .fullScreen
         present(loginController, animated: true)

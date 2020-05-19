@@ -15,4 +15,6 @@ class Utilities {
     var db: Firestore {
         return Firestore.firestore()
     }
+    
+    var currentUser: User?
 }
