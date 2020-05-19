@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 class LoginController: UIViewController {
     
@@ -19,13 +20,16 @@ class LoginController: UIViewController {
         return view
     }()
     
-    let loginRegisterButton: UIButton = {
+    lazy var loginRegisterButton: UIButton = {
         let button = UIButton(type: .system)
         button.backgroundColor = UIColor(r: 80, g: 101, b: 161)
         button.setTitle("Register", for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitleColor(UIColor.white, for: .normal)
         button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
+        
+        button.addTarget(self, action: #selector(handleRegistration), for: .touchUpInside)
+        
         return button
     }()
     
@@ -154,6 +158,31 @@ class LoginController: UIViewController {
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
+    }
+    
+    @objc func handleRegistration() {
+        
+        guard let email = emailTextField.text, email != "", let password = passwordTextField.text, password != "", let name = nameTextField.text, name != "" else { return }
+        
+        Auth.auth().createUser(withEmail: email, password: password) { (result, error) in
+            
+            if let error = error {
+                debugPrint(error.localizedDescription)
+            } else if let result = result {
+                let uid = result.user.uid
+                
+                let userInfo: [String: String] = ["name": name, "email": email, "uid": uid]
+                
+                Utilities.shared.db.collection("users").document(uid).setData(userInfo) { error in
+                    
+                    if let error = error {
+                        debugPrint(error.localizedDescription)
+                    }
+                    
+                }
+                
+            }
+        }
     }
     
 }

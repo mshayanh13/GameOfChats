@@ -3,11 +3,12 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		10842D44247409A800D26713 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 10842D43247409A800D26713 /* GoogleService-Info.plist */; };
+		10842D46247413D200D26713 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D45247413D200D26713 /* Utilities.swift */; };
 		1093C5882473F7BE00E83556 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C5872473F7BE00E83556 /* AppDelegate.swift */; };
 		1093C58A2473F7BE00E83556 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C5892473F7BE00E83556 /* SceneDelegate.swift */; };
 		1093C58C2473F7BE00E83556 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C58B2473F7BE00E83556 /* ViewController.swift */; };
@@ -19,6 +20,7 @@
 
 /* Begin PBXFileReference section */
 		10842D43247409A800D26713 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		10842D45247413D200D26713 /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 		1093C5842473F7BE00E83556 /* GameOfChats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GameOfChats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1093C5872473F7BE00E83556 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1093C5892473F7BE00E83556 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -72,6 +74,7 @@
 				1093C5922473F7C000E83556 /* LaunchScreen.storyboard */,
 				1093C5952473F7C000E83556 /* Info.plist */,
 				10842D43247409A800D26713 /* GoogleService-Info.plist */,
+				10842D45247413D200D26713 /* Utilities.swift */,
 			);
 			path = GameOfChats;
 			sourceTree = "<group>";
@@ -99,7 +102,6 @@
 				B9B35ABD069DE18450757D21 /* Pods-GameOfChats.debug.xcconfig */,
 				37A9ECEE969B0692069F03F4 /* Pods-GameOfChats.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -221,6 +223,7 @@
 				1093C58C2473F7BE00E83556 /* ViewController.swift in Sources */,
 				1093C59D2473FCB500E83556 /* LoginController.swift in Sources */,
 				1093C5882473F7BE00E83556 /* AppDelegate.swift in Sources */,
+				10842D46247413D200D26713 /* Utilities.swift in Sources */,
 				1093C58A2473F7BE00E83556 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
