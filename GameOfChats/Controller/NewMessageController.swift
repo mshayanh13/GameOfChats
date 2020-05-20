@@ -18,7 +18,7 @@ class NewMessageController: UITableViewController {
         let array = Array(usersSet)
         
         return array.sorted { (user1, user2) -> Bool in
-            return user1.name > user2.name
+            return user1.name < user2.name
         }
     }
     

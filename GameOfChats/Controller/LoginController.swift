@@ -11,6 +11,8 @@ import Firebase
 
 class LoginController: UIViewController {
     
+    var messagesController: MessagesController?
+    
     let inputsContainerView: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor.white
@@ -270,6 +272,7 @@ extension LoginController:  UIImagePickerControllerDelegate, UINavigationControl
                 debugPrint(error.localizedDescription)
             } else if let result = result {
                 Utilities.shared.currentUser = result.user
+                self.messagesController?.fetchUserAndSetupNavBarTitle()
                 self.dismiss(animated: true, completion: nil)
             }
             
@@ -289,7 +292,7 @@ extension LoginController:  UIImagePickerControllerDelegate, UINavigationControl
                 
                 var userInfo: [String: String] = ["name": name, "email": email, "uid": uid]
                 
-                if let imageData = self.profileImageView.image?.jpegData(compressionQuality: 0.6) {
+                if let imageData = self.profileImageView.image?.jpegData(compressionQuality: 0.1) {
                     let profileImageRef = Storage.storage().reference().child("profile_images/\(uid)/\(NSUUID().uuidString).jpg")
                     let metadata = StorageMetadata()
                     metadata.contentType = "image/jpeg"
@@ -324,6 +327,10 @@ extension LoginController:  UIImagePickerControllerDelegate, UINavigationControl
                 debugPrint(error.localizedDescription)
             } else {
                 Utilities.shared.currentUser = user
+                
+                let firebaseUser = FirebaseUser(data: userInfo)
+                
+                self.messagesController?.setupNavBarWithUser(user: firebaseUser)
                 self.dismiss(animated: true, completion: nil)
             }
             
