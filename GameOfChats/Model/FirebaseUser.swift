@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct FirebaseUser {
+struct FirebaseUser: Hashable, Equatable {
     let email: String
     let name: String
     let uid: String
@@ -19,5 +19,9 @@ struct FirebaseUser {
         self.name = data["name"] ?? ""
         self.uid = data["uid"] ?? ""
         self.imageURL = URL(string: data["imageURL"] ?? "")
+    }
+    
+    static func == (lhs: FirebaseUser, rhs: FirebaseUser) -> Bool {
+        return lhs.uid == rhs.uid
     }
 }

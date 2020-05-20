@@ -90,7 +90,7 @@ class LoginController: UIViewController {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFill
         imageView.isUserInteractionEnabled = true
-        imageView.addGestureRecognizer(UIGestureRecognizer(target: self, action: #selector(handleSelectProfileImageView)))
+        imageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleSelectProfileImageView)))
         
         return imageView
     }()
@@ -289,7 +289,7 @@ extension LoginController:  UIImagePickerControllerDelegate, UINavigationControl
                 
                 var userInfo: [String: String] = ["name": name, "email": email, "uid": uid]
                 
-                if let imageData = self.profileImageView.image?.jpegData(compressionQuality: 0.7) {
+                if let imageData = self.profileImageView.image?.jpegData(compressionQuality: 0.6) {
                     let profileImageRef = Storage.storage().reference().child("profile_images/\(uid)/\(NSUUID().uuidString).jpg")
                     let metadata = StorageMetadata()
                     metadata.contentType = "image/jpeg"
@@ -318,7 +318,7 @@ extension LoginController:  UIImagePickerControllerDelegate, UINavigationControl
     }
     
     func registerUserIntoDatabase(_ user: User, userInfo: [String: String]) {
-        Utilities.shared.db.collection("users").document(user.uid).setData(userInfo) { error in
+        Firestore.firestore().collection("users").document(user.uid).setData(userInfo) { error in
             
             if let error = error {
                 debugPrint(error.localizedDescription)

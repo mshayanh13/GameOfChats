@@ -24,6 +24,11 @@ class MessagesController: UITableViewController {
         checkIfUserIsLoggedIn()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        checkIfUserIsLoggedIn()
+    }
+    
     func checkIfUserIsLoggedIn() {
         if Auth.auth().currentUser?.uid == nil {
             perform(#selector(handleLogout), with: self, afterDelay: 0)
