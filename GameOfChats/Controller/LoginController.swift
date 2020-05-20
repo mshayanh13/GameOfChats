@@ -84,11 +84,14 @@ class LoginController: UIViewController {
         return view
     }()
     
-    let profileImageView: UIImageView = {
+    lazy var profileImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.image = UIImage(named: "gameofthrones_splash")
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFill
+        imageView.isUserInteractionEnabled = true
+        imageView.addGestureRecognizer(UIGestureRecognizer(target: self, action: #selector(handleSelectProfileImageView)))
+        
         return imageView
     }()
     
@@ -190,6 +193,65 @@ class LoginController: UIViewController {
         return .lightContent
     }
     
+    @objc func handleLoginRegisterChange() {
+        let title = loginRegisterSegmentedControl.titleForSegment(at: loginRegisterSegmentedControl.selectedSegmentIndex)
+        loginRegisterButton.setTitle(title, for: .normal)
+        
+        inputsContainerViewHeightAnchor?.constant = loginRegisterSegmentedControl.selectedSegmentIndex == 0 ? 100 : 150
+        
+        nameTextFieldHeightAnchor?.isActive = false
+        nameTextFieldHeightAnchor = nameTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: loginRegisterSegmentedControl.selectedSegmentIndex == 0 ? 0 : 1/3)
+        nameTextFieldHeightAnchor?.isActive = true
+        
+        emailTextFieldHeightAnchor?.isActive = false
+        emailTextFieldHeightAnchor = emailTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: loginRegisterSegmentedControl.selectedSegmentIndex == 0 ? 1/2 : 1/3)
+        emailTextFieldHeightAnchor?.isActive = true
+        
+        passwordTextFieldHeightAnchor?.isActive = false
+        passwordTextFieldHeightAnchor = passwordTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: loginRegisterSegmentedControl.selectedSegmentIndex == 0 ? 1/2 : 1/3)
+        passwordTextFieldHeightAnchor?.isActive = true
+    }
+}
+
+extension UIColor {
+    convenience init(r: CGFloat, g: CGFloat, b: CGFloat) {
+        self.init(red: r/255, green: g/255, blue: b/255, alpha: 1)
+    }
+}
+
+extension LoginController:  UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    @objc func handleSelectProfileImageView() {
+        let picker = UIImagePickerController()
+        picker.modalPresentationStyle = .fullScreen
+        
+        picker.delegate = self
+        picker.allowsEditing = true
+        
+        present(picker, animated: true)
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        dismiss(animated: true, completion: nil)
+    }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        
+        var selectedImage: UIImage?
+        
+        if let editedImage = info[.editedImage] as? UIImage {
+            selectedImage = editedImage
+        } else if let originalImage = info[.originalImage] as? UIImage {
+            selectedImage = originalImage
+        }
+        
+        if let selectedImage = selectedImage {
+            profileImageView.image = selectedImage
+        }
+        
+        dismiss(animated: true, completion: nil)
+        
+    }
+    
     @objc func handleLoginRegister() {
         if loginRegisterSegmentedControl.selectedSegmentIndex == 0 {
             handleLogin()
@@ -225,46 +287,46 @@ class LoginController: UIViewController {
             } else if let result = result {
                 let uid = result.user.uid
                 
-                let userInfo: [String: String] = ["name": name, "email": email, "uid": uid]
+                var userInfo: [String: String] = ["name": name, "email": email, "uid": uid]
                 
-                Utilities.shared.db.collection("users").document(uid).setData(userInfo) { error in
+                if let imageData = self.profileImageView.image?.jpegData(compressionQuality: 0.7) {
+                    let profileImageRef = Storage.storage().reference().child("profile_images/\(uid)/\(NSUUID().uuidString).jpg")
+                    let metadata = StorageMetadata()
+                    metadata.contentType = "image/jpeg"
                     
-                    if let error = error {
-                        debugPrint(error.localizedDescription)
-                    } else {
-                        Utilities.shared.currentUser = result.user
-                        self.dismiss(animated: true, completion: nil)
+                    profileImageRef.putData(imageData, metadata: metadata) { (metadata, error) in
+                        if let error = error {
+                            debugPrint(error.localizedDescription)
+                        } else {
+                            profileImageRef.downloadURL { (url, error) in
+                                if let url = url {
+                                    userInfo["imageURL"] = url.absoluteString
+                                }
+                                
+                                self.registerUserIntoDatabase(result.user, userInfo: userInfo)
+                            }
+                            
+                            
+                        }
                     }
-                    
                 }
+                
+                
                 
             }
         }
     }
     
-    @objc func handleLoginRegisterChange() {
-        let title = loginRegisterSegmentedControl.titleForSegment(at: loginRegisterSegmentedControl.selectedSegmentIndex)
-        loginRegisterButton.setTitle(title, for: .normal)
-        
-        inputsContainerViewHeightAnchor?.constant = loginRegisterSegmentedControl.selectedSegmentIndex == 0 ? 100 : 150
-        
-        nameTextFieldHeightAnchor?.isActive = false
-        nameTextFieldHeightAnchor = nameTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: loginRegisterSegmentedControl.selectedSegmentIndex == 0 ? 0 : 1/3)
-        nameTextFieldHeightAnchor?.isActive = true
-        
-        emailTextFieldHeightAnchor?.isActive = false
-        emailTextFieldHeightAnchor = emailTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: loginRegisterSegmentedControl.selectedSegmentIndex == 0 ? 1/2 : 1/3)
-        emailTextFieldHeightAnchor?.isActive = true
-        
-        passwordTextFieldHeightAnchor?.isActive = false
-        passwordTextFieldHeightAnchor = passwordTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: loginRegisterSegmentedControl.selectedSegmentIndex == 0 ? 1/2 : 1/3)
-        passwordTextFieldHeightAnchor?.isActive = true
-    }
-    
-}
-
-extension UIColor {
-    convenience init(r: CGFloat, g: CGFloat, b: CGFloat) {
-        self.init(red: r/255, green: g/255, blue: b/255, alpha: 1)
+    func registerUserIntoDatabase(_ user: User, userInfo: [String: String]) {
+        Utilities.shared.db.collection("users").document(user.uid).setData(userInfo) { error in
+            
+            if let error = error {
+                debugPrint(error.localizedDescription)
+            } else {
+                Utilities.shared.currentUser = user
+                self.dismiss(animated: true, completion: nil)
+            }
+            
+        }
     }
 }

@@ -12,10 +12,12 @@ struct FirebaseUser {
     let email: String
     let name: String
     let uid: String
+    let imageURL: URL?
     
     init(data: [String: String]) {
         self.email = data["email"] ?? ""
         self.name = data["name"] ?? ""
         self.uid = data["uid"] ?? ""
+        self.imageURL = URL(string: data["imageURL"] ?? "")
     }
 }
