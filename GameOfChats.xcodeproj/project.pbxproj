@@ -9,9 +9,11 @@
 /* Begin PBXBuildFile section */
 		10842D44247409A800D26713 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 10842D43247409A800D26713 /* GoogleService-Info.plist */; };
 		10842D46247413D200D26713 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D45247413D200D26713 /* Utilities.swift */; };
+		10842D482474532B00D26713 /* NewMessageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D472474532B00D26713 /* NewMessageController.swift */; };
+		10842D4B247456AA00D26713 /* FirebaseUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D4A247456AA00D26713 /* FirebaseUser.swift */; };
 		1093C5882473F7BE00E83556 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C5872473F7BE00E83556 /* AppDelegate.swift */; };
 		1093C58A2473F7BE00E83556 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C5892473F7BE00E83556 /* SceneDelegate.swift */; };
-		1093C58C2473F7BE00E83556 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C58B2473F7BE00E83556 /* ViewController.swift */; };
+		1093C58C2473F7BE00E83556 /* MessagesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C58B2473F7BE00E83556 /* MessagesController.swift */; };
 		1093C5912473F7C000E83556 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1093C5902473F7C000E83556 /* Assets.xcassets */; };
 		1093C5942473F7C000E83556 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1093C5922473F7C000E83556 /* LaunchScreen.storyboard */; };
 		1093C59D2473FCB500E83556 /* LoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C59C2473FCB500E83556 /* LoginController.swift */; };
@@ -21,10 +23,12 @@
 /* Begin PBXFileReference section */
 		10842D43247409A800D26713 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		10842D45247413D200D26713 /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
+		10842D472474532B00D26713 /* NewMessageController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMessageController.swift; sourceTree = "<group>"; };
+		10842D4A247456AA00D26713 /* FirebaseUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseUser.swift; sourceTree = "<group>"; };
 		1093C5842473F7BE00E83556 /* GameOfChats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GameOfChats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1093C5872473F7BE00E83556 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1093C5892473F7BE00E83556 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
-		1093C58B2473F7BE00E83556 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		1093C58B2473F7BE00E83556 /* MessagesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesController.swift; sourceTree = "<group>"; };
 		1093C5902473F7C000E83556 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1093C5932473F7C000E83556 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		1093C5952473F7C000E83556 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -46,6 +50,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		10842D492474569A00D26713 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				10842D4A247456AA00D26713 /* FirebaseUser.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
 		1093C57B2473F7BE00E83556 = {
 			isa = PBXGroup;
 			children = (
@@ -67,6 +79,7 @@
 		1093C5862473F7BE00E83556 /* GameOfChats */ = {
 			isa = PBXGroup;
 			children = (
+				10842D492474569A00D26713 /* Model */,
 				1093C59B2473FCA800E83556 /* Controller */,
 				1093C5872473F7BE00E83556 /* AppDelegate.swift */,
 				1093C5892473F7BE00E83556 /* SceneDelegate.swift */,
@@ -83,7 +96,8 @@
 			isa = PBXGroup;
 			children = (
 				1093C59C2473FCB500E83556 /* LoginController.swift */,
-				1093C58B2473F7BE00E83556 /* ViewController.swift */,
+				1093C58B2473F7BE00E83556 /* MessagesController.swift */,
+				10842D472474532B00D26713 /* NewMessageController.swift */,
 			);
 			path = Controller;
 			sourceTree = "<group>";
@@ -220,8 +234,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1093C58C2473F7BE00E83556 /* ViewController.swift in Sources */,
+				1093C58C2473F7BE00E83556 /* MessagesController.swift in Sources */,
 				1093C59D2473FCB500E83556 /* LoginController.swift in Sources */,
+				10842D482474532B00D26713 /* NewMessageController.swift in Sources */,
+				10842D4B247456AA00D26713 /* FirebaseUser.swift in Sources */,
 				1093C5882473F7BE00E83556 /* AppDelegate.swift in Sources */,
 				10842D46247413D200D26713 /* Utilities.swift in Sources */,
 				1093C58A2473F7BE00E83556 /* SceneDelegate.swift in Sources */,
