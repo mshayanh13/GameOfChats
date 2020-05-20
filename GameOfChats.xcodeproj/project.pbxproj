@@ -11,6 +11,7 @@
 		10842D46247413D200D26713 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D45247413D200D26713 /* Utilities.swift */; };
 		10842D482474532B00D26713 /* NewMessageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D472474532B00D26713 /* NewMessageController.swift */; };
 		10842D4B247456AA00D26713 /* FirebaseUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D4A247456AA00D26713 /* FirebaseUser.swift */; };
+		10842D4D24754F3F00D26713 /* ChatLogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D4C24754F3F00D26713 /* ChatLogController.swift */; };
 		1093C5882473F7BE00E83556 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C5872473F7BE00E83556 /* AppDelegate.swift */; };
 		1093C58A2473F7BE00E83556 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C5892473F7BE00E83556 /* SceneDelegate.swift */; };
 		1093C58C2473F7BE00E83556 /* MessagesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C58B2473F7BE00E83556 /* MessagesController.swift */; };
@@ -25,6 +26,7 @@
 		10842D45247413D200D26713 /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 		10842D472474532B00D26713 /* NewMessageController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMessageController.swift; sourceTree = "<group>"; };
 		10842D4A247456AA00D26713 /* FirebaseUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseUser.swift; sourceTree = "<group>"; };
+		10842D4C24754F3F00D26713 /* ChatLogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogController.swift; sourceTree = "<group>"; };
 		1093C5842473F7BE00E83556 /* GameOfChats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GameOfChats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1093C5872473F7BE00E83556 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1093C5892473F7BE00E83556 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -98,6 +100,7 @@
 				1093C59C2473FCB500E83556 /* LoginController.swift */,
 				1093C58B2473F7BE00E83556 /* MessagesController.swift */,
 				10842D472474532B00D26713 /* NewMessageController.swift */,
+				10842D4C24754F3F00D26713 /* ChatLogController.swift */,
 			);
 			path = Controller;
 			sourceTree = "<group>";
@@ -234,6 +237,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				10842D4D24754F3F00D26713 /* ChatLogController.swift in Sources */,
 				1093C58C2473F7BE00E83556 /* MessagesController.swift in Sources */,
 				1093C59D2473FCB500E83556 /* LoginController.swift in Sources */,
 				10842D482474532B00D26713 /* NewMessageController.swift in Sources */,

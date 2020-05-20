@@ -48,12 +48,21 @@ class MessagesController: UITableViewController {
     
     func setupNavBarWithUser(user: FirebaseUser) {
         
-        let titleView = UIView()
-        titleView.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
-        titleView.backgroundColor = .red
+        let titleView: IntrinsicView = {
+            let view = IntrinsicView()
+            
+            view.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
+                        
+            view.isUserInteractionEnabled = true
+            view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showChatController)))
+            
+            return view
+        }()
+        
         
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
+        
         titleView.addSubview(containerView)
         
         let profileImageView = UIImageView()
@@ -85,6 +94,8 @@ class MessagesController: UITableViewController {
         containerView.centerYAnchor.constraint(equalTo: titleView.centerYAnchor).isActive = true
         
         self.navigationItem.titleView = titleView
+        
+        
     }
     
     @objc func handleLogout() {
@@ -110,5 +121,16 @@ class MessagesController: UITableViewController {
         present(navController, animated: true)
         
     }
+    
+    @objc func showChatController() {
+        let chatLogController = ChatLogController(collectionViewLayout: UICollectionViewFlowLayout())
+        chatLogController.modalPresentationStyle = .fullScreen
+        navigationController?.pushViewController(chatLogController, animated: true)
+    }
 }
 
+class IntrinsicView: UIView {
+    override var intrinsicContentSize: CGSize {
+        return UIView.layoutFittingExpandedSize
+    }
+}
