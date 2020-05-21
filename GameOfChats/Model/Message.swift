@@ -27,4 +27,10 @@ struct Message: Equatable {
             lhs.text == rhs.text &&
             lhs.timestamp == rhs.timestamp
     }
+    
+    func chatPartnerId() -> String? {
+        guard let userUid = Utilities.shared.currentUser?.uid else { return nil }
+        
+        return fromId == userUid ? toId : fromId
+    }
 }

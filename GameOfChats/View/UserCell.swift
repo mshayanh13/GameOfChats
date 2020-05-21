@@ -13,10 +13,15 @@ class UserCell: UITableViewCell {
     
     var message: Message? {
         didSet {
+            
+            guard let message = message else {
+                return
+            }
+            
             setupNameAndProfileImage()
             
-            detailTextLabel?.text = message!.text
-            if let message = message, let timestamp = Double(message.timestamp) {
+            detailTextLabel?.text = message.text
+            if let timestamp = Double(message.timestamp) {
                 let timestampDate = Date(timeIntervalSince1970: timestamp)
                 
                 let dateFormatter = DateFormatter()
@@ -27,15 +32,11 @@ class UserCell: UITableViewCell {
     }
     
     func setupNameAndProfileImage() {
-        let chatPartnerId: String?
-        
-        if message?.fromId == Utilities.shared.currentUser?.uid {
-            chatPartnerId = message?.toId
-        } else {
-            chatPartnerId = message?.fromId
+        guard let message = message, let chatPartnerId = message.chatPartnerId() else {
+            return
         }
         
-        Firestore.firestore().collection("users").document(chatPartnerId!).getDocument { (snapshot, error) in
+        Firestore.firestore().collection("users").document(chatPartnerId).getDocument { (snapshot, error) in
             if let error = error {
                 debugPrint(error.localizedDescription)
             } else if let snapshot = snapshot, let data = snapshot.data() as? [String: String] {

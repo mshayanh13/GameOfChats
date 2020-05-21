@@ -45,24 +45,24 @@ class MessagesController: UITableViewController {
                             
                             let message = Message(data: messageDictionary)
                             
-                            if !self.messages.contains(message) {
-                                
-                                if let previousMessage =  self.messagesDictionary[message.toId] {
-                                    if previousMessage.timestamp < message.timestamp {
-                                        self.messagesDictionary[message.toId] = message
-                                    }
-                                } else {
-                                    self.messagesDictionary[message.toId] = message
-                                }
-                                
-                                print(self.messagesDictionary)
-                                
-                                self.messages = Array(self.messagesDictionary.values)
-                                self.messages.sort { (m1, m2) -> Bool in
-                                    if let timestamp1 = Double(m1.timestamp), let timestamp2 = Double(m2.timestamp) {
-                                        return timestamp1 > timestamp2
+                            if let chatPartnerId = message.chatPartnerId() {
+                                if !self.messages.contains(message) {
+                                    
+                                    if let previousMessage =  self.messagesDictionary[chatPartnerId] {
+                                        if previousMessage.timestamp < message.timestamp {
+                                            self.messagesDictionary[chatPartnerId] = message
+                                        }
                                     } else {
-                                        return false
+                                        self.messagesDictionary[chatPartnerId] = message
+                                    }
+                                    
+                                    self.messages = Array(self.messagesDictionary.values)
+                                    self.messages.sort { (m1, m2) -> Bool in
+                                        if let timestamp1 = Double(m1.timestamp), let timestamp2 = Double(m2.timestamp) {
+                                            return timestamp1 > timestamp2
+                                        } else {
+                                            return false
+                                        }
                                     }
                                 }
                             }
@@ -201,6 +201,28 @@ class MessagesController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 72
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        let message = messages[indexPath.row]
+        guard let chatPartnerId = message.chatPartnerId() else {
+            return
+        }
+        
+        Firestore.firestore().collection("users").document(chatPartnerId).getDocument { (snapshot, error) in
+            if let error = error {
+                debugPrint(error.localizedDescription)
+            } else if let snapshot = snapshot {
+                guard var dictionary = snapshot.data() as? [String: String] else { return }
+                
+                dictionary["id"] = chatPartnerId
+                let user = FirebaseUser(data: dictionary)
+                
+                self.showChatController(for: user)
+            }
+        }
     }
     
     @objc func handleLogout() {

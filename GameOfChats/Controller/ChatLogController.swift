@@ -9,11 +9,42 @@
 import UIKit
 import Firebase
 
-class ChatLogController: UICollectionViewController {
+class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
     
+    let cellId = "cellId"
+    var messages = [Message]()
     var user: FirebaseUser? {
         didSet {
             navigationItem.title = user?.name
+            
+            observeMessages()
+        }
+    }
+    
+    func observeMessages() {
+        guard let userUid = Utilities.shared.currentUser?.uid else { return }
+        
+        Firestore.firestore().collection("user-messages").document(userUid).addSnapshotListener { (snapshot, error) in
+            if let error = error {
+                debugPrint(error.localizedDescription)
+            } else if let snapshot = snapshot, let messageIds = snapshot.data() {
+                for messageId in messageIds.keys {
+                    Firestore.firestore().collection("messages").document(messageId).getDocument { (snapshot, error) in
+                        if let error = error {
+                            debugPrint(error.localizedDescription)
+                        } else if let snapshot = snapshot, let dictionary = snapshot.data() as? [String: String] {
+                            let message = Message(data: dictionary)
+                            if !self.messages.contains(message) && message.chatPartnerId() == self.user?.uid {
+                                self.messages.append(message)
+                                
+                                DispatchQueue.main.async {
+                                    self.collectionView.reloadData()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -27,15 +58,30 @@ class ChatLogController: UICollectionViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        collectionView.alwaysBounceVertical = true
         collectionView.backgroundColor = .white
-        
+        collectionView.register(ChatMessageCell.self, forCellWithReuseIdentifier: cellId)
         setupInputComponents()
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return messages.count
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as? ChatMessageCell else { return ChatMessageCell() }
+        let message = messages[indexPath.row]
+        cell.textView.text = message.text
+        return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        return CGSize(width: view.frame.width, height: 80)
     }
     
     func setupInputComponents() {
         let containerView = UIView()
-        containerView.backgroundColor = .systemRed
+        containerView.backgroundColor = .white
         containerView.translatesAutoresizingMaskIntoConstraints = false
         
         view.addSubview(containerView)
@@ -75,7 +121,7 @@ class ChatLogController: UICollectionViewController {
     
     @objc func handleSend() {
         guard let text = inputTextField.text, text != "" else { return }
-        
+        inputTextField.text = ""
         let fromId = Utilities.shared.currentUser!.uid
         let toId = user!.uid
         
