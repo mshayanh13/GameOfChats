@@ -76,12 +76,26 @@ class ChatLogController: UICollectionViewController {
     @objc func handleSend() {
         guard let text = inputTextField.text, text != "" else { return }
         
-        let ref = Firestore.firestore().collection("messages")
+        let fromId = Utilities.shared.currentUser!.uid
+        let toId = user!.uid
+        
+        let childRef = Firestore.firestore().collection("messages").document()
         let value = ["text": text,
-                     "toId": user!.uid,
-                     "fromId": Auth.auth().currentUser!.uid,
+                     "toId": toId,
+                     "fromId": fromId,
                      "timestamp": String(Date().timeIntervalSince1970)]
-        ref.document().setData(value)
+        childRef.setData(value) { (error) in
+            if let error = error {
+                debugPrint(error.localizedDescription)
+            } else {
+                let fromUserMessagesRef = Firestore.firestore().collection("user-messages").document(fromId)
+                let messageId = childRef.documentID
+                fromUserMessagesRef.setData([messageId: 1], merge: true)
+                
+                let toUserMessagesRef = Firestore.firestore().collection("user-messages").document(toId)
+                toUserMessagesRef.setData([messageId: 1], merge: true)
+            }
+        }
         
     }
 }

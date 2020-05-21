@@ -28,8 +28,52 @@ class MessagesController: UITableViewController {
         checkIfUserIsLoggedIn()
         
         tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
-        
-        observeMessages()
+    }
+    
+    func observeUserMessages() {
+        guard let userUid = Utilities.shared.currentUser?.uid else { return }
+        Firestore.firestore().collection("user-messages").document(userUid).addSnapshotListener { (snapshot, error) in
+            if let error = error {
+                debugPrint(error.localizedDescription)
+            } else if let snapshot = snapshot, let messagesDictionary = snapshot.data() {
+                
+                for key in messagesDictionary.keys {
+                    Firestore.firestore().collection("messages").document(key).getDocument { (snapshot, error) in
+                        if let error = error {
+                            debugPrint(error.localizedDescription)
+                        } else if let snapshot = snapshot, let messageDictionary = snapshot.data() as? [String: String] {
+                            
+                            let message = Message(data: messageDictionary)
+                            
+                            if !self.messages.contains(message) {
+                                
+                                if let previousMessage =  self.messagesDictionary[message.toId] {
+                                    if previousMessage.timestamp < message.timestamp {
+                                        self.messagesDictionary[message.toId] = message
+                                    }
+                                } else {
+                                    self.messagesDictionary[message.toId] = message
+                                }
+                                
+                                print(self.messagesDictionary)
+                                
+                                self.messages = Array(self.messagesDictionary.values)
+                                self.messages.sort { (m1, m2) -> Bool in
+                                    if let timestamp1 = Double(m1.timestamp), let timestamp2 = Double(m2.timestamp) {
+                                        return timestamp1 > timestamp2
+                                    } else {
+                                        return false
+                                    }
+                                }
+                            }
+                            DispatchQueue.main.async {
+                                self.tableView.reloadData()
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     
     func observeMessages() {
@@ -41,7 +85,7 @@ class MessagesController: UITableViewController {
                     if let document = documentChange.document.data() as? [String: String] {
                         let message = Message(data: document)
                         if !self.messages.contains(message) {
-                            //self.messages.append(message)
+                            
                             self.messagesDictionary[message.toId] = message
                             self.messages = Array(self.messagesDictionary.values)
                             self.messages.sort { (m1, m2) -> Bool in
@@ -75,6 +119,8 @@ class MessagesController: UITableViewController {
     func fetchUserAndSetupNavBarTitle() {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         
+        Utilities.shared.currentUser = Auth.auth().currentUser
+        
         Firestore.firestore().collection("users").document(uid).getDocument { (document, error) in
             if let error = error {
                 debugPrint(error.localizedDescription)
@@ -88,13 +134,17 @@ class MessagesController: UITableViewController {
     
     func setupNavBarWithUser(user: FirebaseUser) {
         
+        messagesDictionary.removeAll()
+        messages.removeAll()
+        
+        tableView.reloadData()
+        
+        observeUserMessages()
+        
         let titleView: UIView = {
             let view = UIView()
             
             view.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
-                        
-//            view.isUserInteractionEnabled = true
-//            view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showChatController)))
             
             return view
         }()
@@ -185,9 +235,3 @@ class MessagesController: UITableViewController {
         navigationController?.pushViewController(chatLogController, animated: true)
     }
 }
-
-//class IntrinsicView: UIView {
-//    override var intrinsicContentSize: CGSize {
-//        return UIView.layoutFittingExpandedSize
-//    }
-//}
