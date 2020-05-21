@@ -13,6 +13,7 @@
 		10842D4B247456AA00D26713 /* FirebaseUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D4A247456AA00D26713 /* FirebaseUser.swift */; };
 		10842D4D24754F3F00D26713 /* ChatLogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D4C24754F3F00D26713 /* ChatLogController.swift */; };
 		10842D4F2476046700D26713 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D4E2476046700D26713 /* Message.swift */; };
+		10842D532476092200D26713 /* UserCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10842D522476092200D26713 /* UserCell.swift */; };
 		1093C5882473F7BE00E83556 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C5872473F7BE00E83556 /* AppDelegate.swift */; };
 		1093C58A2473F7BE00E83556 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C5892473F7BE00E83556 /* SceneDelegate.swift */; };
 		1093C58C2473F7BE00E83556 /* MessagesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1093C58B2473F7BE00E83556 /* MessagesController.swift */; };
@@ -29,6 +30,7 @@
 		10842D4A247456AA00D26713 /* FirebaseUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseUser.swift; sourceTree = "<group>"; };
 		10842D4C24754F3F00D26713 /* ChatLogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogController.swift; sourceTree = "<group>"; };
 		10842D4E2476046700D26713 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		10842D522476092200D26713 /* UserCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCell.swift; sourceTree = "<group>"; };
 		1093C5842473F7BE00E83556 /* GameOfChats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GameOfChats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1093C5872473F7BE00E83556 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1093C5892473F7BE00E83556 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -63,6 +65,14 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
+		10842D512476090800D26713 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				10842D522476092200D26713 /* UserCell.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
 		1093C57B2473F7BE00E83556 = {
 			isa = PBXGroup;
 			children = (
@@ -85,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				10842D492474569A00D26713 /* Model */,
+				10842D512476090800D26713 /* View */,
 				1093C59B2473FCA800E83556 /* Controller */,
 				1093C5872473F7BE00E83556 /* AppDelegate.swift */,
 				1093C5892473F7BE00E83556 /* SceneDelegate.swift */,
@@ -248,6 +259,7 @@
 				10842D4B247456AA00D26713 /* FirebaseUser.swift in Sources */,
 				1093C5882473F7BE00E83556 /* AppDelegate.swift in Sources */,
 				10842D46247413D200D26713 /* Utilities.swift in Sources */,
+				10842D532476092200D26713 /* UserCell.swift in Sources */,
 				1093C58A2473F7BE00E83556 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

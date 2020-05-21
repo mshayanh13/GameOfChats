@@ -11,7 +11,9 @@ import Firebase
 
 class MessagesController: UITableViewController {
 
+    let cellId = "cellId"
     var messages = [Message]()
+    var messagesDictionary = [String: Message]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -25,6 +27,8 @@ class MessagesController: UITableViewController {
         
         checkIfUserIsLoggedIn()
         
+        tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
+        
         observeMessages()
     }
     
@@ -37,7 +41,16 @@ class MessagesController: UITableViewController {
                     if let document = documentChange.document.data() as? [String: String] {
                         let message = Message(data: document)
                         if !self.messages.contains(message) {
-                            self.messages.append(message)
+                            //self.messages.append(message)
+                            self.messagesDictionary[message.toId] = message
+                            self.messages = Array(self.messagesDictionary.values)
+                            self.messages.sort { (m1, m2) -> Bool in
+                                if let timestamp1 = Double(m1.timestamp), let timestamp2 = Double(m2.timestamp) {
+                                    return timestamp1 > timestamp2
+                                } else {
+                                    return false
+                                }
+                            }
                         }
                         DispatchQueue.main.async {
                             self.tableView.reloadData()
@@ -130,9 +143,14 @@ class MessagesController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "cellId")
-        cell.textLabel?.text = messages[indexPath.row].text
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath) as? UserCell else { return UserCell() }
+        let message = messages[indexPath.row]
+        cell.message = message
         return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 72
     }
     
     @objc func handleLogout() {
