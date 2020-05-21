@@ -76,38 +76,6 @@ class MessagesController: UITableViewController {
         }
     }
     
-    func observeMessages() {
-        Firestore.firestore().collection("messages").addSnapshotListener { (snapshot, error) in
-            if let error = error {
-                debugPrint(error.localizedDescription)
-            } else if let snapshot = snapshot {
-                for documentChange in snapshot.documentChanges {
-                    if let document = documentChange.document.data() as? [String: String] {
-                        let message = Message(data: document)
-                        if !self.messages.contains(message) {
-                            
-                            self.messagesDictionary[message.toId] = message
-                            self.messages = Array(self.messagesDictionary.values)
-                            self.messages.sort { (m1, m2) -> Bool in
-                                if let timestamp1 = Double(m1.timestamp), let timestamp2 = Double(m2.timestamp) {
-                                    return timestamp1 > timestamp2
-                                } else {
-                                    return false
-                                }
-                            }
-                        }
-                        DispatchQueue.main.async {
-                            self.tableView.reloadData()
-                        }
-                        
-                        
-                    }
-                    
-                }
-            }
-        }
-    }
-    
     func checkIfUserIsLoggedIn() {
         if Auth.auth().currentUser?.uid == nil {
             perform(#selector(handleLogout), with: self, afterDelay: 0)

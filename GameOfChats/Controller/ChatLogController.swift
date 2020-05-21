@@ -58,6 +58,8 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        collectionView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 58, right: 0)
+        collectionView.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
         collectionView.alwaysBounceVertical = true
         collectionView.backgroundColor = .white
         collectionView.register(ChatMessageCell.self, forCellWithReuseIdentifier: cellId)
@@ -72,11 +74,26 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as? ChatMessageCell else { return ChatMessageCell() }
         let message = messages[indexPath.row]
         cell.textView.text = message.text
+        
+        cell.bubbleWidthAnchor?.constant = estimateFrame(for: message.text).width + 32
+        
         return cell
     }
     
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        collectionView.collectionViewLayout.invalidateLayout()
+    }
+    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: view.frame.width, height: 80)
+        var height: CGFloat = 80
+        height = estimateFrame(for: messages[indexPath.row].text).height + 20
+        return CGSize(width: view.frame.width, height: height)
+    }
+    
+    private func estimateFrame(for text: String) -> CGRect {
+        let size = CGSize(width: 200, height: 1000)
+        let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
+        return NSString(string: text).boundingRect(with: size, options: options, attributes: [NSAttributedString.Key.font : UIFont.systemFont(ofSize: 16)], context: nil)
     }
     
     func setupInputComponents() {
@@ -121,7 +138,7 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
     
     @objc func handleSend() {
         guard let text = inputTextField.text, text != "" else { return }
-        inputTextField.text = ""
+        
         let fromId = Utilities.shared.currentUser!.uid
         let toId = user!.uid
         
@@ -134,6 +151,9 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
             if let error = error {
                 debugPrint(error.localizedDescription)
             } else {
+                
+                self.inputTextField.text = nil
+                
                 let fromUserMessagesRef = Firestore.firestore().collection("user-messages").document(fromId)
                 let messageId = childRef.documentID
                 fromUserMessagesRef.setData([messageId: 1], merge: true)
