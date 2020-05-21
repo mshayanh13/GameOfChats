@@ -11,6 +11,12 @@ import Firebase
 
 class ChatLogController: UICollectionViewController {
     
+    var user: FirebaseUser? {
+        didSet {
+            navigationItem.title = user?.name
+        }
+    }
+    
     lazy var inputTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Enter message..."
@@ -22,7 +28,6 @@ class ChatLogController: UICollectionViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        navigationItem.title = "Chat Log Controller"
         collectionView.backgroundColor = .white
         
         setupInputComponents()
@@ -72,7 +77,10 @@ class ChatLogController: UICollectionViewController {
         guard let text = inputTextField.text, text != "" else { return }
         
         let ref = Firestore.firestore().collection("messages")
-        let value = ["text": text]
+        let value = ["text": text,
+                     "toId": user!.uid,
+                     "fromId": Auth.auth().currentUser!.uid,
+                     "timestamp": String(Date().timeIntervalSince1970)]
         ref.document().setData(value)
         
     }

@@ -12,6 +12,7 @@ import Firebase
 class NewMessageController: UITableViewController {
     
     let cellId = "cellId"
+    var messagesController: MessagesController?
     
     var usersSet = Set<FirebaseUser>()
     var users: [FirebaseUser] {
@@ -72,6 +73,14 @@ class NewMessageController: UITableViewController {
         cell.profileImageView.loadImageUsingCacheWithUrlString(url: user.imageURL)
         
         return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: false)
+        dismiss(animated: true) {
+            let user = self.users[indexPath.row]
+            self.messagesController?.showChatController(for: user)
+        }
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

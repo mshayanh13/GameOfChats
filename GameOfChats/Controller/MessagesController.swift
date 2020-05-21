@@ -11,10 +11,12 @@ import Firebase
 
 class MessagesController: UITableViewController {
 
+    var messages = [Message]()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = .blue
+        view.backgroundColor = .white
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
         
@@ -22,6 +24,31 @@ class MessagesController: UITableViewController {
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: image, style: .plain, target: self, action: #selector(handleNewMessage))
         
         checkIfUserIsLoggedIn()
+        
+        observeMessages()
+    }
+    
+    func observeMessages() {
+        Firestore.firestore().collection("messages").addSnapshotListener { (snapshot, error) in
+            if let error = error {
+                debugPrint(error.localizedDescription)
+            } else if let snapshot = snapshot {
+                for documentChange in snapshot.documentChanges {
+                    if let document = documentChange.document.data() as? [String: String] {
+                        let message = Message(data: document)
+                        if !self.messages.contains(message) {
+                            self.messages.append(message)
+                        }
+                        DispatchQueue.main.async {
+                            self.tableView.reloadData()
+                        }
+                        
+                        
+                    }
+                    
+                }
+            }
+        }
     }
     
     func checkIfUserIsLoggedIn() {
@@ -48,13 +75,13 @@ class MessagesController: UITableViewController {
     
     func setupNavBarWithUser(user: FirebaseUser) {
         
-        let titleView: IntrinsicView = {
-            let view = IntrinsicView()
+        let titleView: UIView = {
+            let view = UIView()
             
             view.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
                         
-            view.isUserInteractionEnabled = true
-            view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showChatController)))
+//            view.isUserInteractionEnabled = true
+//            view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(showChatController)))
             
             return view
         }()
@@ -98,6 +125,16 @@ class MessagesController: UITableViewController {
         
     }
     
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return messages.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "cellId")
+        cell.textLabel?.text = messages[indexPath.row].text
+        return cell
+    }
+    
     @objc func handleLogout() {
         
         do {
@@ -116,21 +153,23 @@ class MessagesController: UITableViewController {
     @objc func handleNewMessage() {
         
         let newMessageController = NewMessageController()
+        newMessageController.messagesController = self
         let navController = UINavigationController(rootViewController: newMessageController)
         navController.modalPresentationStyle = .fullScreen
         present(navController, animated: true)
         
     }
     
-    @objc func showChatController() {
+    func showChatController(for user: FirebaseUser) {
         let chatLogController = ChatLogController(collectionViewLayout: UICollectionViewFlowLayout())
+        chatLogController.user = user
         chatLogController.modalPresentationStyle = .fullScreen
         navigationController?.pushViewController(chatLogController, animated: true)
     }
 }
 
-class IntrinsicView: UIView {
-    override var intrinsicContentSize: CGSize {
-        return UIView.layoutFittingExpandedSize
-    }
-}
+//class IntrinsicView: UIView {
+//    override var intrinsicContentSize: CGSize {
+//        return UIView.layoutFittingExpandedSize
+//    }
+//}
