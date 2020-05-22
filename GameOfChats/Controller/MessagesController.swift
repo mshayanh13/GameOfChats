@@ -14,6 +14,7 @@ class MessagesController: UITableViewController {
     let cellId = "cellId"
     var messages = [Message]()
     var messagesDictionary = [String: Message]()
+    var timer: Timer?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,55 +33,64 @@ class MessagesController: UITableViewController {
     
     func observeUserMessages() {
         guard let userUid = Utilities.shared.currentUser?.uid else { return }
-        Firestore.firestore().collection("user-messages").document(userUid).addSnapshotListener { (snapshot, error) in
+        
+        Firestore.firestore().collection("user-messages").document(userUid).collection("recent").addSnapshotListener { (snapshot, error) in
             if let error = error {
                 debugPrint(error.localizedDescription)
-            } else if let snapshot = snapshot, let messagesDictionary = snapshot.data() {
-                
-                for key in messagesDictionary.keys {
-                    Firestore.firestore().collection("messages").document(key).getDocument { (snapshot, error) in
-                        if let error = error {
-                            debugPrint(error.localizedDescription)
-                        } else if let snapshot = snapshot, let messageDictionary = snapshot.data() as? [String: String] {
-                            
-                            let message = Message(data: messageDictionary)
-                            
-                            if let chatPartnerId = message.chatPartnerId() {
-                                if !self.messages.contains(message) {
-                                    
-                                    if let previousMessage =  self.messagesDictionary[chatPartnerId] {
-                                        if previousMessage.timestamp < message.timestamp {
-                                            self.messagesDictionary[chatPartnerId] = message
-                                        }
-                                    } else {
-                                        self.messagesDictionary[chatPartnerId] = message
-                                    }
-                                    
-                                    self.messages = Array(self.messagesDictionary.values)
-                                    self.messages.sort { (m1, m2) -> Bool in
-                                        if let timestamp1 = Double(m1.timestamp), let timestamp2 = Double(m2.timestamp) {
-                                            return timestamp1 > timestamp2
-                                        } else {
-                                            return false
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            self.timer?.invalidate()
-                            self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
-                            
-                            
-                        }
+            } else if let snapshot = snapshot {
+                let messageDocuments = snapshot.documentChanges
+                for messageDocument in messageDocuments {
+                    if let messageId = messageDocument.document.data().keys.first {
+                        self.fetchMessages(with: messageId)
                     }
                 }
             }
         }
     }
     
-    var timer: Timer?
+    private func fetchMessages(with messageId: String) {
+        Firestore.firestore().collection("messages").document(messageId).getDocument { (snapshot, error) in
+            if let error = error {
+                debugPrint(error.localizedDescription)
+            } else if let snapshot = snapshot, let messageDictionary = snapshot.data() {
+                
+                let message = Message(data: messageDictionary)
+                
+                if let chatPartnerId = message.chatPartnerId() {
+                    if !self.messages.contains(message) {
+                        
+                        if let previousMessage =  self.messagesDictionary[chatPartnerId] {
+                            if previousMessage.timestamp < message.timestamp {
+                                self.messagesDictionary[chatPartnerId] = message
+                            }
+                        } else {
+                            self.messagesDictionary[chatPartnerId] = message
+                        }
+                        
+                        
+                    }
+                }
+                
+                self.attemptReloadTable()
+            }
+        }
+    }
+    
+    private func attemptReloadTable() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
+    }
     
     @objc func handleReloadTable() {
+        
+        messages = Array(messagesDictionary.values)
+        messages.sort { (m1, m2) -> Bool in
+            let timestamp1 = m1.timestamp
+            let timestamp2 = m2.timestamp
+            
+            return timestamp1 > timestamp2
+        }
+        
         DispatchQueue.main.async {
             self.tableView.reloadData()
         }

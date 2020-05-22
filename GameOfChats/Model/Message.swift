@@ -11,14 +11,14 @@ import Foundation
 struct Message: Equatable {
     var fromId: String
     var toId: String
-    var timestamp: String
+    var timestamp: Double
     var text: String
     
-    init(data: [String: String]) {
-        self.fromId = data["fromId"] ?? ""
-        self.toId = data["toId"] ?? ""
-        self.timestamp = data["timestamp"] ?? String(Date().timeIntervalSince1970)
-        self.text = data["text"] ?? ""
+    init(data: [String: Any]) {
+        self.fromId = data["fromId"] as? String ?? ""
+        self.toId = data["toId"] as? String ?? ""
+        self.timestamp = data["timestamp"] as? Double ?? 0
+        self.text = data["text"] as? String ?? ""
     }
     
     static func == (lhs: Message, rhs: Message) -> Bool {

@@ -24,21 +24,26 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
     var containerViewBottomAnchor: NSLayoutConstraint?
     
     func observeMessages() {
-        guard let userUid = Utilities.shared.currentUser?.uid else { return }
+        guard let currentUserUid = Utilities.shared.currentUser?.uid,
+            let userUid = user?.uid else { return }
         
-        Firestore.firestore().collection("user-messages").document(userUid).addSnapshotListener { (snapshot, error) in
+        let query = Firestore.firestore().collection("user-messages").document(currentUserUid).collection(userUid)
+            query.addSnapshotListener { (snapshot, error) in
             if let error = error {
                 debugPrint(error.localizedDescription)
-            } else if let snapshot = snapshot, let messageIds = snapshot.data() {
-                for messageId in messageIds.keys {
+            } else if let snapshot = snapshot {
+                let documents = snapshot.documentChanges
+                for document in documents {
+                    let messageId = document.document.data().keys.first!
+                    
                     Firestore.firestore().collection("messages").document(messageId).getDocument { (snapshot, error) in
                         if let error = error {
                             debugPrint(error.localizedDescription)
-                        } else if let snapshot = snapshot, let dictionary = snapshot.data() as? [String: String] {
+                        } else if let snapshot = snapshot, let dictionary = snapshot.data() {
                             let message = Message(data: dictionary)
                             if !self.messages.contains(message) && message.chatPartnerId() == self.user?.uid {
                                 self.messages.append(message)
-                                
+
                                 DispatchQueue.main.async {
                                     self.collectionView.reloadData()
                                 }
@@ -252,20 +257,26 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         let value = ["text": text,
                      "toId": toId,
                      "fromId": fromId,
-                     "timestamp": String(Date().timeIntervalSince1970)]
+                     "timestamp": Date().timeIntervalSince1970] as [String : Any]
         childRef.setData(value) { (error) in
             if let error = error {
                 debugPrint(error.localizedDescription)
             } else {
                 
                 self.inputTextField.text = nil
-                
-                let fromUserMessagesRef = Firestore.firestore().collection("user-messages").document(fromId)
                 let messageId = childRef.documentID
+                
+                let fromUserMessagesRef = Firestore.firestore().collection("user-messages").document(fromId).collection(toId).document()
                 fromUserMessagesRef.setData([messageId: 1], merge: true)
                 
-                let toUserMessagesRef = Firestore.firestore().collection("user-messages").document(toId)
+                let toUserMessagesRef = Firestore.firestore().collection("user-messages").document(toId).collection(fromId).document()
                 toUserMessagesRef.setData([messageId: 1], merge: true)
+                
+                let fromUserMessagesRecentRef = Firestore.firestore().collection("user-messages").document(fromId).collection("recent").document(toId)
+                fromUserMessagesRecentRef.setData([messageId: 1])
+                
+                let toUserMessagesRecentRef = Firestore.firestore().collection("user-messages").document(toId).collection("recent").document(fromId)
+                toUserMessagesRecentRef.setData([messageId: 1])
             }
         }
         
