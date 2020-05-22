@@ -12,7 +12,8 @@ class ChatMessageCell: UICollectionViewCell {
     
     let textView: UITextView = {
         let tv = UITextView()
-        tv.text = "SAMPLE TEXT"
+        //tv.text = "SAMPLE TEXT"
+        tv.isEditable = false
         tv.font = UIFont.systemFont(ofSize: 16)
         tv.backgroundColor = .clear
         tv.textColor = .white
