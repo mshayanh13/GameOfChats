@@ -52,6 +52,8 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
 
                                 DispatchQueue.main.async {
                                     self.collectionView.reloadData()
+                                    let indexPath = IndexPath(item: self.messages.count - 1, section: 0)
+                                    self.collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
                                 }
                             }
                         }
@@ -77,6 +79,8 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         collectionView.backgroundColor = .white
         collectionView.register(ChatMessageCell.self, forCellWithReuseIdentifier: cellId)
         collectionView.keyboardDismissMode = .interactive
+        
+        setupKeyboardObservers()
     }
     
     lazy var inputContainerView: UIView = {
@@ -135,7 +139,7 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
     }
     
     func setupKeyboardObservers() {
-        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardDidShow), name: UIResponder.keyboardDidShowNotification, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
@@ -144,6 +148,12 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         super.viewDidDisappear(animated)
         
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc func handleKeyboardDidShow() {
+        guard messages.count > 0 else { return }
+        let indexPath = IndexPath(item: messages.count-1, section: 0)
+        collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
     }
     
     @objc func handleUploadTap() {
@@ -190,6 +200,9 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         
         if let text = message.text {
             cell.bubbleWidthAnchor?.constant = estimateFrame(for: text).width + 32
+        } else if message.imageUrl != nil {
+            cell.bubbleWidthAnchor?.constant = 200
+            
         }
         
         return cell
@@ -228,8 +241,11 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         var height: CGFloat = 80
         
-        if let text = messages[indexPath.row].text {
+        let message = messages[indexPath.row]
+        if let text = message.text {
             height = estimateFrame(for: text).height + 20
+        } else if let imageWidth = message.imageWidth, let imageHeight = message.imageHeight {
+            height = CGFloat(imageHeight / imageWidth * 200)
         }
         
         let width = UIScreen.main.bounds.width
@@ -246,15 +262,34 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
     @objc func handleSend() {
         guard let text = inputTextField.text, text != "" else { return }
         
+        let properties = ["text": text] as [String: Any]
+        sendMessage(with: properties)
+        
+    }
+    
+    private func sendMessage(with imageUrl: String, and image: UIImage) {
+        
+        let properties = ["imageUrl": imageUrl,
+                                    "imageWidth": image.size.width,
+                                    "imageHeight": image.size.height] as [String : Any]
+        sendMessage(with: properties)
+        
+    }
+    
+    private func sendMessage(with properties: [String: Any]) {
         let fromId = Utilities.shared.currentUser!.uid
         let toId = user!.uid
         
         let childRef = Firestore.firestore().collection("messages").document()
-        let value = ["text": text,
-                     "toId": toId,
+        var values = ["toId": toId,
                      "fromId": fromId,
                      "timestamp": Date().timeIntervalSince1970] as [String : Any]
-        childRef.setData(value) { (error) in
+        properties.forEach { (key, value) in
+            values[key] = value
+        }
+        
+        
+        childRef.setData(values) { (error) in
             if let error = error {
                 debugPrint(error.localizedDescription)
             } else {
@@ -275,7 +310,6 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
                 toUserMessagesRecentRef.setData([messageId: 1])
             }
         }
-        
     }
 }
 
@@ -317,7 +351,7 @@ extension ChatLogController: UIImagePickerControllerDelegate, UINavigationContro
                 } else if let _ = metadata {
                     profileImageRef.downloadURL { (url, error) in
                         if let url = url {
-                            self.sendMessage(with: url.absoluteString)
+                            self.sendMessage(with: url.absoluteString, and: image)
                         }
                         
                         
@@ -325,40 +359,6 @@ extension ChatLogController: UIImagePickerControllerDelegate, UINavigationContro
                     
                     
                 }
-            }
-        }
-        
-    }
-    
-    private func sendMessage(with imageUrl: String) {
-        
-        let fromId = Utilities.shared.currentUser!.uid
-        let toId = user!.uid
-        
-        let childRef = Firestore.firestore().collection("messages").document()
-        let value = ["imageUrl": imageUrl,
-                     "toId": toId,
-                     "fromId": fromId,
-                     "timestamp": Date().timeIntervalSince1970] as [String : Any]
-        childRef.setData(value) { (error) in
-            if let error = error {
-                debugPrint(error.localizedDescription)
-            } else {
-                
-                self.inputTextField.text = nil
-                let messageId = childRef.documentID
-                
-                let fromUserMessagesRef = Firestore.firestore().collection("user-messages").document(fromId).collection(toId).document()
-                fromUserMessagesRef.setData([messageId: 1], merge: true)
-                
-                let toUserMessagesRef = Firestore.firestore().collection("user-messages").document(toId).collection(fromId).document()
-                toUserMessagesRef.setData([messageId: 1], merge: true)
-                
-                let fromUserMessagesRecentRef = Firestore.firestore().collection("user-messages").document(fromId).collection("recent").document(toId)
-                fromUserMessagesRecentRef.setData([messageId: 1])
-                
-                let toUserMessagesRecentRef = Firestore.firestore().collection("user-messages").document(toId).collection("recent").document(fromId)
-                toUserMessagesRecentRef.setData([messageId: 1])
             }
         }
         

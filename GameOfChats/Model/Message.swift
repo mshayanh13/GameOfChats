@@ -14,6 +14,8 @@ struct Message: Equatable {
     var timestamp: Double
     var text: String?
     var imageUrl: String?
+    var imageHeight: Double?
+    var imageWidth: Double?
     
     init(data: [String: Any]) {
         self.fromId = data["fromId"] as? String ?? ""
@@ -21,6 +23,8 @@ struct Message: Equatable {
         self.timestamp = data["timestamp"] as? Double ?? 0
         self.text = data["text"] as? String
         self.imageUrl = data["imageUrl"] as? String
+        self.imageHeight = data["imageHeight"] as? Double
+        self.imageWidth = data["imageWidth"] as? Double
     }
     
     static func == (lhs: Message, rhs: Message) -> Bool {
