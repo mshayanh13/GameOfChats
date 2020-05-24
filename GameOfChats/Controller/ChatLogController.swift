@@ -23,45 +23,9 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
     
     var containerViewBottomAnchor: NSLayoutConstraint?
     
-    func observeMessages() {
-        guard let currentUserUid = Utilities.shared.currentUser?.uid,
-            let userUid = user?.uid else { return }
-        
-        let query = Firestore.firestore().collection("user-messages").document(currentUserUid).collection(userUid)
-            query.addSnapshotListener { (snapshot, error) in
-            if let error = error {
-                debugPrint(error.localizedDescription)
-            } else if let snapshot = snapshot {
-                let documents = snapshot.documentChanges
-                for document in documents {
-                    let messageId = document.document.data().keys.first!
-                    
-                    Firestore.firestore().collection("messages").document(messageId).getDocument { (snapshot, error) in
-                        if let error = error {
-                            debugPrint(error.localizedDescription)
-                        } else if let snapshot = snapshot, let dictionary = snapshot.data() {
-                            let message = Message(data: dictionary)
-                            if !self.messages.contains(message) && message.chatPartnerId() == self.user?.uid {
-                                self.messages.append(message)
-                                self.messages.sort { (m1, m2) -> Bool in
-                                    let timestamp1 = m1.timestamp
-                                    let timestamp2 = m2.timestamp
-                                    
-                                    return timestamp1 < timestamp2
-                                }
-
-                                DispatchQueue.main.async {
-                                    self.collectionView.reloadData()
-                                    let indexPath = IndexPath(item: self.messages.count - 1, section: 0)
-                                    self.collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    var startingFrame: CGRect?
+    var blackBackground: UIView?
+    var startingImageView: UIImageView?
     
     lazy var inputTextField: UITextField = {
         let textField = UITextField()
@@ -70,18 +34,6 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         textField.delegate = self
         return textField
     }()
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        collectionView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
-        collectionView.alwaysBounceVertical = true
-        collectionView.backgroundColor = .white
-        collectionView.register(ChatMessageCell.self, forCellWithReuseIdentifier: cellId)
-        collectionView.keyboardDismissMode = .interactive
-        
-        setupKeyboardObservers()
-    }
     
     lazy var inputContainerView: UIView = {
         let containerView = UIView()
@@ -138,16 +90,26 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         return true
     }
     
-    func setupKeyboardObservers() {
-        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardDidShow), name: UIResponder.keyboardDidShowNotification, object: nil)
+    override func viewDidLoad() {
+        super.viewDidLoad()
         
-        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
+        collectionView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+        collectionView.alwaysBounceVertical = true
+        collectionView.backgroundColor = .white
+        collectionView.register(ChatMessageCell.self, forCellWithReuseIdentifier: cellId)
+        collectionView.keyboardDismissMode = .interactive
+        
+        setupKeyboardObservers()
     }
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    func setupKeyboardObservers() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardDidShow), name: UIResponder.keyboardDidShowNotification, object: nil)
     }
     
     @objc func handleKeyboardDidShow() {
@@ -166,97 +128,48 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         present(imagePicker, animated: true, completion: nil)
     }
     
-    @objc func handleKeyboardWillShow(notification: Notification) {
-        if let keyboardHeight = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as AnyObject).cgRectValue?.height, let keyboardDuration = (notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as AnyObject).doubleValue {
-            containerViewBottomAnchor?.constant = -keyboardHeight
-            UIView.animate(withDuration: keyboardDuration) {
-                self.view.layoutIfNeeded()
-            }
-        }
-        
-    }
-    
-    @objc func handleKeyboardWillHide(notification: Notification) {
-        containerViewBottomAnchor?.constant = 0
-        
-        if let keyboardDuration = (notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as AnyObject).doubleValue {
-        
-            UIView.animate(withDuration: keyboardDuration) {
-                self.view.layoutIfNeeded()
-            }
-        }
-    }
-    
-    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return messages.count
-    }
-    
-    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as? ChatMessageCell else { return ChatMessageCell() }
-        let message = messages[indexPath.row]
-        cell.textView.text = message.text
-        
-        setupCell(cell, with: message)
-        
-        if let text = message.text {
-            cell.bubbleWidthAnchor?.constant = estimateFrame(for: text).width + 32
-        } else if message.imageUrl != nil {
-            cell.bubbleWidthAnchor?.constant = 200
-            
-        }
-        
-        return cell
-    }
-    
-    private func setupCell(_ cell: ChatMessageCell, with message: Message) {
-        cell.profileImageView.loadImageUsingCacheWithUrlString(url: self.user?.imageURL)
-        
-        if message.fromId == Utilities.shared.currentUser?.uid {
-            cell.bubbleView.backgroundColor = ChatMessageCell.blueColor
-            cell.textView.textColor = .white
-            cell.bubbleViewRightAnchor?.isActive = true
-            cell.bubbleViewLeftAnchor?.isActive = false
-            cell.profileImageView.isHidden = true
-        } else {
-            cell.bubbleView.backgroundColor = UIColor(r: 240, g: 240, b: 240)
-            cell.textView.textColor = .black
-            cell.bubbleViewRightAnchor?.isActive = false
-            cell.bubbleViewLeftAnchor?.isActive = true
-            cell.profileImageView.isHidden = false
-        }
-        
-        if let messageImageUrl = message.imageUrl {
-            cell.messageImageView.loadImageUsingCacheWithUrlString(url: URL(string: messageImageUrl))
-            cell.messageImageView.isHidden = false
-            cell.bubbleView.backgroundColor = .clear
-        } else {
-            cell.messageImageView.isHidden = true
-        }
-    }
-    
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         collectionView.collectionViewLayout.invalidateLayout()
     }
     
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        var height: CGFloat = 80
+    func observeMessages() {
+        guard let currentUserUid = Utilities.shared.currentUser?.uid,
+            let userUid = user?.uid else { return }
         
-        let message = messages[indexPath.row]
-        if let text = message.text {
-            height = estimateFrame(for: text).height + 20
-        } else if let imageWidth = message.imageWidth, let imageHeight = message.imageHeight {
-            height = CGFloat(imageHeight / imageWidth * 200)
+        let query = Firestore.firestore().collection("user-messages").document(currentUserUid).collection(userUid)
+            query.addSnapshotListener { (snapshot, error) in
+            if let error = error {
+                debugPrint(error.localizedDescription)
+            } else if let snapshot = snapshot {
+                let documents = snapshot.documentChanges
+                for document in documents {
+                    let messageId = document.document.data().keys.first!
+                    
+                    Firestore.firestore().collection("messages").document(messageId).getDocument { (snapshot, error) in
+                        if let error = error {
+                            debugPrint(error.localizedDescription)
+                        } else if let snapshot = snapshot, let dictionary = snapshot.data() {
+                            let message = Message(data: dictionary)
+                            if !self.messages.contains(message) && message.chatPartnerId() == self.user?.uid {
+                                self.messages.append(message)
+                                self.messages.sort { (m1, m2) -> Bool in
+                                    let timestamp1 = m1.timestamp
+                                    let timestamp2 = m2.timestamp
+                                    
+                                    return timestamp1 < timestamp2
+                                }
+
+                                DispatchQueue.main.async {
+                                    self.collectionView.reloadData()
+                                    let indexPath = IndexPath(item: self.messages.count - 1, section: 0)
+                                    self.collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-        
-        let width = UIScreen.main.bounds.width
-        
-        return CGSize(width: width, height: height)
-    }
-    
-    private func estimateFrame(for text: String) -> CGRect {
-        let size = CGSize(width: 200, height: 1000)
-        let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
-        return NSString(string: text).boundingRect(with: size, options: options, attributes: [NSAttributedString.Key.font : UIFont.systemFont(ofSize: 16)], context: nil)
     }
     
     @objc func handleSend() {
@@ -313,6 +226,81 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
     }
 }
 
+extension ChatLogController {
+    
+    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return messages.count
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as? ChatMessageCell else { return ChatMessageCell() }
+        
+        cell.chatLogController = self
+        
+        let message = messages[indexPath.row]
+        cell.textView.text = message.text
+        
+        setupCell(cell, with: message)
+        
+        if let text = message.text {
+            cell.bubbleWidthAnchor?.constant = estimateFrame(for: text).width + 32
+            cell.textView.isHidden = false
+        } else if message.imageUrl != nil {
+            cell.bubbleWidthAnchor?.constant = 200
+            cell.textView.isHidden = true
+        }
+        
+        return cell
+    }
+    
+    private func setupCell(_ cell: ChatMessageCell, with message: Message) {
+        cell.profileImageView.loadImageUsingCacheWithUrlString(url: self.user?.imageURL)
+        
+        if message.fromId == Utilities.shared.currentUser?.uid {
+            cell.bubbleView.backgroundColor = ChatMessageCell.blueColor
+            cell.textView.textColor = .white
+            cell.bubbleViewRightAnchor?.isActive = true
+            cell.bubbleViewLeftAnchor?.isActive = false
+            cell.profileImageView.isHidden = true
+        } else {
+            cell.bubbleView.backgroundColor = UIColor(r: 240, g: 240, b: 240)
+            cell.textView.textColor = .black
+            cell.bubbleViewRightAnchor?.isActive = false
+            cell.bubbleViewLeftAnchor?.isActive = true
+            cell.profileImageView.isHidden = false
+        }
+        
+        if let messageImageUrl = message.imageUrl {
+            cell.messageImageView.loadImageUsingCacheWithUrlString(url: URL(string: messageImageUrl))
+            cell.messageImageView.isHidden = false
+            cell.bubbleView.backgroundColor = .clear
+        } else {
+            cell.messageImageView.isHidden = true
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        var height: CGFloat = 80
+        
+        let message = messages[indexPath.row]
+        if let text = message.text {
+            height = estimateFrame(for: text).height + 20
+        } else if let imageWidth = message.imageWidth, let imageHeight = message.imageHeight {
+            height = CGFloat(imageHeight / imageWidth * 200)
+        }
+        
+        let width = UIScreen.main.bounds.width
+        
+        return CGSize(width: width, height: height)
+    }
+    
+    private func estimateFrame(for text: String) -> CGRect {
+        let size = CGSize(width: 200, height: 1000)
+        let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
+        return NSString(string: text).boundingRect(with: size, options: options, attributes: [NSAttributedString.Key.font : UIFont.systemFont(ofSize: 16)], context: nil)
+    }
+}
+
 extension ChatLogController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         handleSend()
@@ -366,5 +354,54 @@ extension ChatLogController: UIImagePickerControllerDelegate, UINavigationContro
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         dismiss(animated: true, completion: nil)
+    }
+    
+    func performZoomIn(for startingImageView: UIImageView) {
+        startingFrame = startingImageView.superview?.convert(startingImageView.frame, to: nil)
+        self.startingImageView = startingImageView
+        self.startingImageView?.isHidden = true
+        
+        guard let startingFrame = startingFrame, let keyWindow = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else { return }
+        blackBackground = UIView(frame: keyWindow.frame)
+        
+        let zoomingImageView = UIImageView(frame: startingFrame)
+        zoomingImageView.backgroundColor = .red
+        zoomingImageView.image = startingImageView.image
+        zoomingImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleZoomOut)))
+        zoomingImageView.isUserInteractionEnabled = true
+        
+        if let blackBackground = blackBackground {
+            
+            blackBackground.backgroundColor = .black
+            blackBackground.alpha = 0
+            keyWindow.addSubview(blackBackground)
+            
+            keyWindow.addSubview(zoomingImageView)
+            
+            UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
+                blackBackground.alpha = 1
+                self.inputContainerView.alpha = 0
+                
+                let height = startingFrame.height / startingFrame.width * keyWindow.frame.width
+                
+                zoomingImageView.frame = CGRect(x: 0, y: 0, width: keyWindow.frame.width, height: height)
+                zoomingImageView.center = keyWindow.center
+            }, completion: nil)
+        
+        }
+    }
+    
+    @objc func handleZoomOut(tapGesture: UITapGestureRecognizer) {
+        guard let startingFrame = startingFrame, let zoomOutImageView = tapGesture.view, let blackBackground = blackBackground else { return }
+        zoomOutImageView.layer.cornerRadius = 16
+        zoomOutImageView.clipsToBounds = true
+        UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
+            zoomOutImageView.frame = startingFrame
+            blackBackground.alpha = 0
+            self.inputContainerView.alpha = 1
+        }) { (completed) in
+            zoomOutImageView.removeFromSuperview()
+            self.startingImageView?.isHidden = false
+        }
     }
 }
