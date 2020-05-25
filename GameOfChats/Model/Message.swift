@@ -16,6 +16,7 @@ struct Message: Equatable {
     var imageUrl: String?
     var imageHeight: Double?
     var imageWidth: Double?
+    var videoUrl: String?
     
     init(data: [String: Any]) {
         self.fromId = data["fromId"] as? String ?? ""
@@ -25,6 +26,7 @@ struct Message: Equatable {
         self.imageUrl = data["imageUrl"] as? String
         self.imageHeight = data["imageHeight"] as? Double
         self.imageWidth = data["imageWidth"] as? Double
+        self.videoUrl = data["videoUrl"] as? String
     }
     
     static func == (lhs: Message, rhs: Message) -> Bool {
@@ -33,7 +35,8 @@ struct Message: Equatable {
             lhs.text == rhs.text &&
             lhs.timestamp == rhs.timestamp &&
             lhs.text == rhs.text &&
-            lhs.imageUrl == rhs.imageUrl
+            lhs.imageUrl == rhs.imageUrl &&
+            lhs.videoUrl == rhs.videoUrl
     }
     
     func chatPartnerId() -> String? {

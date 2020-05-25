@@ -238,9 +238,11 @@ extension ChatLogController {
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as? ChatMessageCell else { return ChatMessageCell() }
         
-        cell.chatLogController = self
-        
         let message = messages[indexPath.row]
+        
+        cell.chatLogController = self
+        cell.message = message
+        
         cell.textView.text = message.text
         
         setupCell(cell, with: message)
@@ -249,6 +251,9 @@ extension ChatLogController {
             cell.bubbleWidthAnchor?.constant = estimateFrame(for: text).width + 32
             cell.textView.isHidden = false
         } else if message.imageUrl != nil {
+            
+            cell.playButton.isHidden = message.videoUrl == nil
+            
             cell.bubbleWidthAnchor?.constant = 200
             cell.textView.isHidden = true
         }
