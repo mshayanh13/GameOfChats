@@ -8,6 +8,8 @@
 
 import UIKit
 import Firebase
+import MobileCoreServices
+import AVFoundation
 
 class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
     
@@ -124,7 +126,8 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         imagePicker.allowsEditing = true
         imagePicker.delegate = self
         imagePicker.modalPresentationStyle = .fullScreen
-        
+        imagePicker.mediaTypes = [kUTTypeImage as String, kUTTypeMovie as String]
+            
         present(imagePicker, animated: true, completion: nil)
     }
     
@@ -309,8 +312,108 @@ extension ChatLogController: UITextFieldDelegate {
 }
 
 extension ChatLogController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+    
+    func getVideoURL(from url: URL, with filename: String) -> URL? {
         
+        do {
+            let documents = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+            let destination = documents.appendingPathComponent(filename)
+            try FileManager.default.copyItem(at: url, to: destination)
+            return destination
+        } catch let error {
+            print(error.localizedDescription)
+            return nil
+        }
+        
+        
+    }
+    
+    func deleteVideo(at url: URL) {
+        do {
+            
+            try FileManager.default.removeItem(at: url)
+            
+        } catch let error {
+            print(error.localizedDescription)
+        }
+    }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        let filename = NSUUID().uuidString + ".mp4"
+        
+        if let videoUrl = info[.mediaURL] as? URL, let newUrl = getVideoURL(from: videoUrl, with: filename) {
+            
+            handleVideoSelected(with: newUrl, and: filename)
+            
+        } else {
+            
+            handleImageSelected(with: info)
+        }
+        
+        dismiss(animated: true, completion: nil)
+    }
+    
+    private func handleVideoSelected(with videoUrl: URL, and filename: String) {
+        let videoRef = Storage.storage().reference().child("message_movies/\(filename)")
+        let metadata = StorageMetadata()
+        metadata.contentType = "video/mp4"
+        
+        let uploadTask = videoRef.putFile(from: videoUrl, metadata: metadata) { (metadata, error) in
+            if let error = error {
+                debugPrint(error.localizedDescription)
+                
+            } else if let _ = metadata {
+                videoRef.downloadURL { (url, error) in
+                    if let error = error {
+                        debugPrint(error.localizedDescription)
+                    } else if let url = url, let thumbnail = self.thumbnailImage(for: videoUrl) {
+                        
+                        self.uploadImageToFirebaseStorage(thumbnail) { (thumbnailImageUrl) in
+                            let videoUrlString = url.absoluteString
+                            
+                            let properties = ["videoUrl": videoUrlString,
+                                              "imageUrl": thumbnailImageUrl,
+                                              "imageWidth": thumbnail.size.width,
+                                              "imageHeight": thumbnail.size.height] as [String : Any]
+                            
+                            self.sendMessage(with: properties)
+                        }
+                        
+                    }
+                    
+                    self.deleteVideo(at: videoUrl)
+                }
+            }
+        }
+        
+        uploadTask.observe(.progress) { (snapshot) in
+            if let completedUnitCount = snapshot.progress?.completedUnitCount {
+                self.navigationItem.title = String(completedUnitCount)
+            }
+        }
+        
+        uploadTask.observe(.success) { (snapshot) in
+            self.navigationItem.title = self.user?.name
+        }
+    }
+    
+    private func thumbnailImage(for videoUrl: URL) -> UIImage? {
+        let asset = AVAsset(url: videoUrl)
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        
+        do {
+            let thumbnailImage = try imageGenerator.copyCGImage(at: CMTime(value: 1, timescale: 60), actualTime: nil)
+            return UIImage(cgImage: thumbnailImage)
+        } catch let error {
+            debugPrint(error.localizedDescription)
+        }
+        
+        
+        
+        return nil
+    }
+    
+    private func handleImageSelected(with info: [UIImagePickerController.InfoKey: Any]) {
         var selectedImage: UIImage?
         
         if let editedImage = info[.editedImage] as? UIImage {
@@ -320,13 +423,13 @@ extension ChatLogController: UIImagePickerControllerDelegate, UINavigationContro
         }
         
         if let selectedImage = selectedImage {
-            uploadImageToFirebaseStorage(selectedImage)
+            uploadImageToFirebaseStorage(selectedImage) { (imageUrl) in
+                self.sendMessage(with: imageUrl, and: selectedImage)
+            }
         }
-        
-        dismiss(animated: true, completion: nil)
     }
     
-    func uploadImageToFirebaseStorage(_ image: UIImage) {
+    func uploadImageToFirebaseStorage(_ image: UIImage, completion: @escaping (_ imageUrl: String)->Void) {
         
         if let imageData = image.jpegData(compressionQuality: 0.2) {
             let profileImageRef = Storage.storage().reference().child("message_images/\(NSUUID().uuidString).jpg")
@@ -339,7 +442,7 @@ extension ChatLogController: UIImagePickerControllerDelegate, UINavigationContro
                 } else if let _ = metadata {
                     profileImageRef.downloadURL { (url, error) in
                         if let url = url {
-                            self.sendMessage(with: url.absoluteString, and: image)
+                            completion(url.absoluteString)
                         }
                         
                         
