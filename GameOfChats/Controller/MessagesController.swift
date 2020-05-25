@@ -29,6 +29,8 @@ class MessagesController: UITableViewController {
         checkIfUserIsLoggedIn()
         
         tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
+        
+        tableView.allowsMultipleSelectionDuringEditing = true
     }
     
     func observeUserMessages() {
@@ -211,6 +213,46 @@ class MessagesController: UITableViewController {
                 self.showChatController(for: user)
             }
         }
+    }
+    
+    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        guard editingStyle == .delete, let uid = Utilities.shared.currentUser?.uid else { return }
+        
+        let message = messages[indexPath.row]
+        
+        var messageIds = [String]()
+        
+        if let chatPartnerId = message.chatPartnerId() {
+            let messageIdsRef = Firestore.firestore().collection("user-messages").document(uid).collection(chatPartnerId)
+            messageIdsRef.getDocuments { (snapshot, error) in
+                if let error = error {
+                    debugPrint(error.localizedDescription)
+                } else if let snapshot = snapshot {
+                    for document in snapshot.documents {
+                        if let messageId = document.data().keys.first {
+                            messageIds.append(messageId)
+                        }
+                    }
+                    
+                    for messageId in messageIds {
+                        messageIdsRef.document(messageId).delete { (error) in
+                            if let error = error {
+                                debugPrint(error.localizedDescription)
+                            } else {
+                                self.messagesDictionary.removeValue(forKey: chatPartnerId)
+                                self.attemptReloadTable()
+                            }
+                        }
+                    }
+                    
+                }
+            }
+        }
+        
     }
     
     @objc func handleLogout() {
